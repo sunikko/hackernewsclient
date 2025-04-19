@@ -39,9 +39,42 @@ function newsDetail() {
 
   console.log(newsContent);
 
+  function makeComment(comments, called = 0) {
+    const commentString = [];
+
+    for (let i = 0; i < comments.length; i++) {
+      commentString.push(`
+        <div style="padding-left: ${called * 40}px;">
+          <div>
+            <strong>${comments[i].user}</strong> ${comments[i].time_ago}
+          </div>
+          <p>${comments[i].content}</p>
+        </div>      
+      `);
+
+      if (comments[i].comments.length > 0) {
+        commentString.push(makeComment(comments[i].comments, called + 1));
+      }
+    }
+
+    return commentString.join("");
+  }
+
+  const commentString = makeComment(newsContent.comments);
+
   container.innerHTML = `
     <h1>${newsContent.title}</h1>
-    
+    <div>
+      <div>
+        <strong>${newsContent.user}</strong> ${newsContent.time_ago}  
+      </div>
+      <p>${newsContent.content}</p>
+    </div>
+    <div>
+      <h2>Comments</h2>
+      ${commentString} 
+    </div>
+
     <div>
       <a href="#/page/${store.currentPage}">back</a>
     </div>
