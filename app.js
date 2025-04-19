@@ -21,11 +21,19 @@ function getData(url) {
   throw new Error("Failed to load data");
 }
 
+function getHashParts() {
+  const [, type, id] = location.hash.split("/");
+  return { type, id };
+}
+
 ////////////////////////////
 // newscontent
 ////////////////////////////
 function newsDetail() {
-  const id = location.hash.substring(7); // to revove the '#'
+  const { id } = getHashParts();
+  if (!id) {
+    return;
+  }
 
   const newsContent = getData(CONTENT_URL.replace("@id", id));
 
@@ -86,19 +94,24 @@ function newsFeeds() {
 }
 
 function router() {
-  const routePath = location.hash;
-  if (routePath === "") {
+  const { type, id } = getHashParts();
+
+  if (!type) {
     newsFeeds();
     return;
-  } else if (routePath.indexOf("#/page/") >= 0) {
-    const page = Number(routePath.substring(7));
-    if (page < 1 || page > pageSize) {
+  }
+
+  if (type === "page") {
+    const page = Number(id);
+    if (page < 1 || page > pageSize || isNaN(page)) {
       return;
     }
     store.currentPage = page;
     newsFeeds();
     return;
-  } else if (routePath.indexOf("#/show/") >= 0) {
+  }
+
+  if (type === "show") {
     newsDetail();
     return;
   }
