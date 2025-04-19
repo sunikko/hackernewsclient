@@ -54,7 +54,7 @@ function newsDetail() {
 function newsFeeds() {
   const newsFeed = getData(HEWS_URL);
   const newsList = [];
-  let tempplate = `
+  let template = `
     <h1>Hacker News</h1>
     <ul>
       {{__news_feed__}}
@@ -80,40 +80,34 @@ function newsFeeds() {
     </li>
     `);
   }
-  tempplate = tempplate.replace("{{__news_feed__}}", newsList.join(""));
-  tempplate = tempplate.replace(
+  template = template.replace("{{__news_feed__}}", newsList.join(""));
+  template = template.replace(
     "{{__prev_page__}}",
     store.currentPage > 1 ? store.currentPage - 1 : 1
   );
   const totalPages = Math.ceil(newsFeed.length / pageSize);
-  tempplate = tempplate.replace(
+  template = template.replace(
     "{{__next_page__}}",
     store.currentPage < totalPages ? store.currentPage + 1 : totalPages
   );
-  container.innerHTML = tempplate;
+  container.innerHTML = template;
 }
 
 function router() {
   const { type, id } = getHashParts();
 
-  if (!type) {
-    newsFeeds();
-    return;
-  }
-
-  if (type === "page") {
-    const page = Number(id);
-    if (page < 1 || page > pageSize || isNaN(page)) {
-      return;
-    }
-    store.currentPage = page;
-    newsFeeds();
-    return;
-  }
-
-  if (type === "show") {
-    newsDetail();
-    return;
+  switch (type) {
+    case undefined:
+      return newsFeeds();
+    case "page":
+      const page = Number(id);
+      if (!page || page < 1 || page > pageSize || isNaN(page)) return;
+      store.currentPage = page;
+      return newsFeeds();
+    case "show":
+      return newsDetail();
+    default:
+      container.innerHTML = `<h2>Page not found</h2>`;
   }
 }
 
