@@ -46,8 +46,17 @@ function newsDetail() {
 function newsFeeds() {
   const newsFeed = getData(HEWS_URL);
   const newsList = [];
+  let tempplate = `
+    <h1>Hacker News</h1>
+    <ul>
+      {{__news_feed__}}
+    </ul>
+    <div>
+      <a href="#/page/{{__prev_page__}}">Previous</a>
+      <a href="#/page/{{__next_page__}}">Next</a>
+    </div>
+  `;
 
-  newsList.push("<ul>");
   for (
     let i = (store.currentPage - 1) * pageSize;
     i < store.currentPage * pageSize && i < newsFeed.length;
@@ -63,23 +72,17 @@ function newsFeeds() {
     </li>
     `);
   }
-  newsList.push("</ul>");
-
+  tempplate = tempplate.replace("{{__news_feed__}}", newsList.join(""));
+  tempplate = tempplate.replace(
+    "{{__prev_page__}}",
+    store.currentPage > 1 ? store.currentPage - 1 : 1
+  );
   const totalPages = Math.ceil(newsFeed.length / pageSize);
-
-  newsList.push(`<div>`);
-
-  if (store.currentPage > 1) {
-    newsList.push(`<a href="#/page/${store.currentPage - 1}">Previous</a>`);
-  }
-
-  if (store.currentPage < totalPages) {
-    newsList.push(`<a href="#/page/${store.currentPage + 1}">Next</a>`);
-  }
-
-  newsList.push(`</div>`);
-
-  container.innerHTML = newsList.join("");
+  tempplate = tempplate.replace(
+    "{{__next_page__}}",
+    store.currentPage < totalPages ? store.currentPage + 1 : totalPages
+  );
+  container.innerHTML = tempplate;
 }
 
 function router() {
