@@ -1,15 +1,40 @@
-const container = document.getElementById("root");
+type Store = {
+  currentPage: number;
+  feeds: NewsFeed[];
+};
+
+type NewsFeed = {
+  id: number;
+  comments_count: number;
+  url: string;
+  user: string;
+  time_ago: string;
+  points: number;
+  title: string;
+  read?: boolean;
+};
+
+const container: HTMLElement | null = document.getElementById("root");
 const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
 
-const store = {
+const store: Store = {
   currentPage: 1,
   feeds: [],
 };
 const pageSize = 5;
-///////////////////////////////////
-// getData
-///////////////////////////////////
+
+/**
+ * Fetches data from a given URL.
+ *
+ * @param {string} url - The URL to fetch data from.
+ * @returns {Promise<any>} A promise that resolves to the fetched data.
+ * @throws Will throw an error if the fetch operation fails.
+ * @example
+ * // Fetch data from a URL
+ * const data = await getData('https://api.example.com/data');
+ * console.log(data);
+ */
 async function getData(url) {
   const response = await fetch(url);
   if (!response.ok) throw new Error("Data fetch failed");
@@ -31,9 +56,30 @@ export const getHashParts = () => {
   return { type, id };
 };
 
-////////////////////////////
-// newscontent
-////////////////////////////
+/**
+ * Displays the details of a news item based on its ID.
+ *
+ * @returns {void} This function does not return anything.
+ * @example
+ * // To display the details of a news item with ID 123
+ * newsDetail();
+ */
+function updateView(html) {
+  if (container) {
+    container.innerHTML = html;
+  } else {
+    console.error("Container element not found");
+  }
+}
+
+/**
+ * Displays the details of a news item based on its ID.
+ *
+ * @returns {void} This function does not return anything.
+ * @example
+ * // To display the details of a news item with ID 123
+ * newsDetail();
+ */
 async function newsDetail() {
   const { id } = getHashParts();
   if (!id) {
@@ -105,9 +151,8 @@ async function newsDetail() {
     return commentString.join("");
   }
 
-  container.innerHTML = template.replace(
-    "{{__comments__}}",
-    makeComment(newsContent.comments)
+  updateView(
+    template.replace("{{__comments__}}", makeComment(newsContent.comments))
   );
 }
 
@@ -212,7 +257,8 @@ async function newsFeeds() {
     "{{__next_page__}}",
     store.currentPage < totalPages ? store.currentPage + 1 : totalPages
   );
-  container.innerHTML = template;
+
+  updateView(template);
 }
 
 /**
@@ -240,7 +286,7 @@ export const router = () => {
     case "show":
       return newsDetail();
     default:
-      container.innerHTML = `<h2>Page not found</h2>`;
+      updateView(`<h2>Page not found</h2>`);
   }
 };
 
