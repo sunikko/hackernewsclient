@@ -143,6 +143,22 @@ function createNewsItem(newsFeed) {
     `;
 }
 
+function getHeaderTemplate() {
+  return `
+    <div class="bg-white text-xl">
+      <div class="mx-auto px-4">
+        <div class="flex justify-between items-center py-6">
+          <h1 class="font-extrabold">Hacker News</h1>
+          <div class="items-center justify-end">
+            <a href="#/page/{{__prev_page__}}" class="text-gray-500">Previous</a>
+            <a href="#/page/{{__next_page__}}" class="text-gray-500 ml-4">Next</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 ////////////////////////////
 //news Feed
 ////////////////////////////
@@ -151,23 +167,7 @@ async function newsFeeds() {
   const newsList = [];
   let template = `
      <div class="bg-gray-600 min-h-screen">
-      <div class="bg-white text-xl">
-        <div class="mx-auto px-4">
-          <div class="flex justify-between items-center py-6">
-            <div class="flex justify-start">
-              <h1 class="font-extrabold">Hacker News</h1>
-            </div>
-            <div class="items-center justify-end">
-              <a href="#/page/{{__prev_page__}}" class="text-gray-500">
-                Previous
-              </a>
-              <a href="#/page/{{__next_page__}}" class="text-gray-500 ml-4">
-                Next
-              </a>
-            </div>
-          </div> 
-        </div>
-      </div>
+      ${getHeaderTemplate()}
       <div class="p-4 text-2xl text-gray-700">
         {{__news_feed__}}        
       </div>
