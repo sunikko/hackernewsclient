@@ -16,10 +16,20 @@ async function getData(url) {
   return await response.json();
 }
 
-function getHashParts() {
+/**
+ * Extracts the type and id from the current URL hash.
+ *
+ * @returns {Object} An object containing `type` and `id` from the URL hash.
+ * @example
+ * // If location.hash is "#/page/2"
+ * const { type, id } = getHashParts();
+ * console.log(type); // "page"
+ * console.log(id);   // "2"
+ */
+export const getHashParts = () => {
   const [, type, id] = location.hash.split("/");
   return { type, id };
-}
+};
 
 ////////////////////////////
 // newscontent
@@ -159,9 +169,15 @@ function getHeaderTemplate() {
   `;
 }
 
-////////////////////////////
-//news Feed
-////////////////////////////
+/**
+ * Displays the list of news feeds, supporting pagination.
+ *
+ * @param {number} [currentPage=1] - The current page number to display (optional).
+ * @returns {void} This function does not return anything.
+ * @example
+ * // To display the first page of news feeds
+ * newsFeeds();
+ */
 async function newsFeeds() {
   let newsFeed = store.feeds;
   const newsList = [];
@@ -199,7 +215,18 @@ async function newsFeeds() {
   container.innerHTML = template;
 }
 
-function router() {
+/**
+ * Routes the application based on the current URL hash.
+ * It calls the corresponding function for the specified route type (page, show, etc.)
+ *
+ * If no route is found, it defaults to showing the news feed.
+ *
+ * @returns {void} This function does not return anything.
+ * @example
+ * // If location.hash is "#/page/2", it will call the `newsFeeds` function with page 2.
+ * router();
+ */
+export const router = () => {
   const { type, id } = getHashParts();
 
   switch (type) {
@@ -215,7 +242,7 @@ function router() {
     default:
       container.innerHTML = `<h2>Page not found</h2>`;
   }
-}
+};
 
 window.addEventListener("hashchange", router);
 
