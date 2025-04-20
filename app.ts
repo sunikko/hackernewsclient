@@ -2,21 +2,22 @@ type Store = {
   currentPage: number;
   feeds: NewsFeed[];
 };
-
-type NewsFeed = {
+type ApiNewsFeed = {
   id: number;
-  comments_count: number;
-  url: string;
+  title: string;
   user: string;
+  url: string;
   time_ago: string;
   points: number;
-  title: string;
+  comments_count: number;
+};
+type NewsFeed = ApiNewsFeed & {
   read?: boolean;
 };
 
 const container: HTMLElement | null = document.getElementById("root");
-const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
-const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
+const NEWS_URL: string = "https://api.hnpwa.com/v0/news/1.json";
+const CONTENT_URL: string = "https://api.hnpwa.com/v0/item/@id.json";
 
 const store: Store = {
   currentPage: 1,
@@ -156,23 +157,20 @@ async function newsDetail() {
   );
 }
 
-function makeFeeds(feeds) {
-  const newsFeed = [];
-  for (let i = 0; i < feeds.length; i++) {
-    newsFeed.push({
-      id: feeds[i].id,
-      title: feeds[i].title,
-      user: feeds[i].user,
-      points: feeds[i].points,
-      time_ago: feeds[i].time_ago,
-      comments_count: feeds[i].comments_count,
-      read: false,
-    });
-  }
-  return newsFeed;
+function makeFeeds(apiFeeds: ApiNewsFeed[]): NewsFeed[] {
+  return apiFeeds.map((feed) => ({
+    id: feed.id,
+    title: feed.title,
+    user: feed.user,
+    points: feed.points,
+    time_ago: feed.time_ago,
+    comments_count: feed.comments_count,
+    url: feed.url ?? "",
+    read: false,
+  }));
 }
 
-function createNewsItem(newsFeed) {
+function createNewsItem(newsFeed: NewsFeed): string {
   return `
     <div class="p-6 ${
       newsFeed.read ? "bg-gray-500" : "bg-white"
@@ -223,9 +221,9 @@ function getHeaderTemplate() {
  * // To display the first page of news feeds
  * newsFeeds();
  */
-async function newsFeeds() {
-  let newsFeed = store.feeds;
-  const newsList = [];
+async function newsFeeds(): Promise<void> {
+  let newsFeed: NewsFeed[] = store.feeds;
+  const newsList: string[] = [];
   let template = `
      <div class="bg-gray-600 min-h-screen">
       ${getHeaderTemplate()}
@@ -236,7 +234,8 @@ async function newsFeeds() {
   `;
 
   if (newsFeed.length === 0) {
-    newsFeed = store.feeds = makeFeeds(await getData(NEWS_URL));
+    const data = await getData(NEWS_URL);
+    newsFeed = store.feeds = makeFeeds(data);
   }
 
   for (
@@ -244,7 +243,6 @@ async function newsFeeds() {
     i < store.currentPage * pageSize && i < newsFeed.length;
     i++
   ) {
-    if (!newsFeed[i]) continue;
     newsList.push(createNewsItem(newsFeed[i]));
   }
   template = template.replace("{{__news_feed__}}", newsList.join(""));
