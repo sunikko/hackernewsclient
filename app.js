@@ -1,9 +1,10 @@
 const container = document.getElementById("root");
-const HEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
+const NEWS_URL = "https://api.hnpwa.com/v0/news/1.json";
 const CONTENT_URL = "https://api.hnpwa.com/v0/item/@id.json";
 
 const store = {
   currentPage: 1,
+  feeds: [],
 };
 const pageSize = 5;
 ///////////////////////////////////
@@ -71,6 +72,13 @@ function newsDetail() {
     </div>
   `;
 
+  for (let i = 0; i < store.feeds.length; i++) {
+    if (store.feeds[i].id === Number(id)) {
+      store.feeds[i].read = true;
+      break;
+    }
+  }
+
   function makeComment(comments, called = 0) {
     const commentString = [];
 
@@ -99,11 +107,27 @@ function newsDetail() {
   );
 }
 
+function makeFeeds(feeds) {
+  const newsFeed = [];
+  for (let i = 0; i < feeds.length; i++) {
+    newsFeed.push({
+      id: feeds[i].id,
+      title: feeds[i].title,
+      user: feeds[i].user,
+      points: feeds[i].points,
+      time_ago: feeds[i].time_ago,
+      comments_count: feeds[i].comments_count,
+      read: false,
+    });
+  }
+  return newsFeed;
+}
+
 ////////////////////////////
 //news Feed
 ////////////////////////////
 function newsFeeds() {
-  const newsFeed = getData(HEWS_URL);
+  let newsFeed = store.feeds;
   const newsList = [];
   let template = `
      <div class="bg-gray-600 min-h-screen">
@@ -130,6 +154,10 @@ function newsFeeds() {
     </div>
   `;
 
+  if (newsFeed.length === 0) {
+    newsFeed = store.feeds = makeFeeds(getData(NEWS_URL));
+  }
+
   for (
     let i = (store.currentPage - 1) * pageSize;
     i < store.currentPage * pageSize && i < newsFeed.length;
@@ -139,7 +167,7 @@ function newsFeeds() {
 
     newsList.push(`
     <div class="p-6 ${
-      newsFeed[i].read ? "bg-red-500" : "bg-white"
+      newsFeed[i].read ? "bg-gray-500" : "bg-white"
     } mt-6 rounded-lg shadow-md transition-colors duration-500 hover:bg-green-100">
         <div class="flex">
           <div class="flex-auto">
