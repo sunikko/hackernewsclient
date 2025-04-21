@@ -39,6 +39,34 @@ const store: Store = {
 };
 const pageSize = 5;
 
+class Api {
+  url: string;
+
+  constructor(url: string) {
+    this.url = url;
+  }
+
+  protected async request<T>(): Promise<T> {
+    const response = await fetch(this.url);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data from ${this.url}`);
+    }
+    return await response.json();
+  }
+}
+
+class NewsFeedApi extends Api {
+  async getData(): Promise<NewsFeed[]> {
+    return await this.request<NewsFeed[]>();
+  }
+}
+
+class NewsDetailApi extends Api {
+  async getData(): Promise<NewsDetail> {
+    return await this.request<NewsDetail>();
+  }
+}
+
 /**
  * Fetches data from a given URL.
  *
@@ -101,7 +129,8 @@ async function newsDetail(): Promise<void> {
     return;
   }
 
-  const newsContent = await getData<NewsDetail>(CONTENT_URL.replace("@id", id));
+  const api = new NewsDetailApi(CONTENT_URL.replace("@id", id));
+  const newsContent = await api.getData();
 
   console.log(newsContent);
 
@@ -248,7 +277,8 @@ async function newsFeeds(): Promise<void> {
   `;
 
   if (newsFeed.length === 0) {
-    const data = await getData<NewsFeed[]>(NEWS_URL);
+    let api = new NewsFeedApi(NEWS_URL);
+    const data = await api.getData();
     newsFeed = store.feeds = makeFeeds(data);
   }
 
