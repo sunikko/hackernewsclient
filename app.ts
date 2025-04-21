@@ -39,33 +39,60 @@ const store: Store = {
 };
 const pageSize = 5;
 
+/**
+ * Applies mixins to a target class by copying methods from base classes.
+ *
+ * @param {Function} targetClass - The target class to which methods will be added.
+ * @param {Array} baseClasses - An array of base classes from which methods will be copied.
+ */
+function applyApiMixins(targetClass: any, baseClasses: any[]): void {
+  baseClasses.forEach((baseClass) => {
+    Object.getOwnPropertyNames(baseClass.prototype).forEach((name) => {
+      const descriptor = Object.getOwnPropertyDescriptor(
+        baseClass.prototype,
+        name
+      );
+
+      if (descriptor) {
+        // Copy method from base class prototype to target class prototype
+        Object.defineProperty(targetClass.prototype, name, descriptor);
+      }
+    });
+  });
+}
+
+// Base API class for making HTTP requests
 class Api {
-  url: string;
-
-  constructor(url: string) {
-    this.url = url;
-  }
-
-  protected async request<T>(): Promise<T> {
-    const response = await fetch(this.url);
+  async getRequest<T>(url: string): Promise<T> {
+    const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to fetch data from ${this.url}`);
+      throw new Error("Failed to fetch data");
     }
-    return await response.json();
+    return (await response.json()) as T;
   }
 }
 
-class NewsFeedApi extends Api {
-  async getData(): Promise<NewsFeed[]> {
-    return await this.request<NewsFeed[]>();
+class NewsFeedApi {
+  async getData(url: string): Promise<NewsFeed[]> {
+    // getRequest is provided via mixin from Api
+    return await this.getRequest<NewsFeed[]>(url);
   }
 }
 
-class NewsDetailApi extends Api {
-  async getData(): Promise<NewsDetail> {
-    return await this.request<NewsDetail>();
+class NewsDetailApi {
+  async getData(url: string): Promise<NewsDetail> {
+    // getRequest is provided via mixin from Api
+    return await this.getRequest<NewsDetail>(url);
   }
 }
+
+// Extend the interfaces so TypeScript recognizes the mixed-in methods
+interface NewsFeedApi extends Api {}
+interface NewsDetailApi extends Api {}
+
+// Apply mixins to inject methods from Api into the specific API classes
+applyApiMixins(NewsFeedApi, [Api]);
+applyApiMixins(NewsDetailApi, [Api]);
 
 /**
  * Fetches data from a given URL.
@@ -129,8 +156,8 @@ async function newsDetail(): Promise<void> {
     return;
   }
 
-  const api = new NewsDetailApi(CONTENT_URL.replace("@id", id));
-  const newsContent = await api.getData();
+  const api = new NewsDetailApi();
+  const newsContent = await api.getData(CONTENT_URL.replace("@id", id));
 
   console.log(newsContent);
 
@@ -277,8 +304,8 @@ async function newsFeeds(): Promise<void> {
   `;
 
   if (newsFeed.length === 0) {
-    let api = new NewsFeedApi(NEWS_URL);
-    const data = await api.getData();
+    let api = new NewsFeedApi();
+    const data = await api.getData(NEWS_URL);
     newsFeed = store.feeds = makeFeeds(data);
   }
 
