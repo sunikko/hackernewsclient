@@ -1,19 +1,33 @@
-type Store = {
+interface Store {
   currentPage: number;
   feeds: NewsFeed[];
-};
-type ApiNewsFeed = {
-  id: number;
-  title: string;
-  user: string;
-  url: string;
-  time_ago: string;
-  points: number;
-  comments_count: number;
-};
-type NewsFeed = ApiNewsFeed & {
+}
+
+interface News {
+  readonly id: number;
+  readonly time_ago: string;
+  readonly title: string;
+  readonly url: string;
+  readonly user: string;
+  readonly content: string;
+}
+
+interface ApiNewsFeed extends News {
+  readonly points: number;
+  readonly comments_count: number;
+}
+
+interface NewsFeed extends ApiNewsFeed {
   read?: boolean;
-};
+}
+interface NewsDetail extends News {
+  readonly comments: NewsComment[];
+}
+
+interface NewsComment extends News {
+  readonly comments: NewsComment[];
+  readonly level: number;
+}
 
 const container: HTMLElement | null = document.getElementById("root");
 const NEWS_URL: string = "https://api.hnpwa.com/v0/news/1.json";
@@ -36,7 +50,7 @@ const pageSize = 5;
  * const data = await getData('https://api.example.com/data');
  * console.log(data);
  */
-async function getData(url) {
+async function getData<Response>(url: string): Promise<Response> {
   const response = await fetch(url);
   if (!response.ok) throw new Error("Data fetch failed");
   return await response.json();
@@ -65,7 +79,7 @@ export const getHashParts = () => {
  * // To display the details of a news item with ID 123
  * newsDetail();
  */
-function updateView(html) {
+function updateView(html: string): void {
   if (container) {
     container.innerHTML = html;
   } else {
@@ -81,13 +95,13 @@ function updateView(html) {
  * // To display the details of a news item with ID 123
  * newsDetail();
  */
-async function newsDetail() {
+async function newsDetail(): Promise<void> {
   const { id } = getHashParts();
   if (!id) {
     return;
   }
 
-  const newsContent = await getData(CONTENT_URL.replace("@id", id));
+  const newsContent = await getData<NewsDetail>(CONTENT_URL.replace("@id", id));
 
   console.log(newsContent);
 
@@ -130,31 +144,30 @@ async function newsDetail() {
     }
   }
 
-  function makeComment(comments, called = 0) {
-    const commentString = [];
-
-    for (let i = 0; i < comments.length; i++) {
-      commentString.push(`
-        <div style="padding-left: ${called * 40}px;" class="mt-4">
-          <div class="text-gray-400">
-            <i class="fa fa-sort-up mr-2"></i>
-            <strong>${comments[i].user}</strong> ${comments[i].time_ago}
-          </div>
-          <p class="text-gray-700">${comments[i].content}</p>
-        </div>      
-      `);
-
-      if (comments[i].comments.length > 0) {
-        commentString.push(makeComment(comments[i].comments, called + 1));
-      }
-    }
-
-    return commentString.join("");
-  }
-
   updateView(
     template.replace("{{__comments__}}", makeComment(newsContent.comments))
   );
+}
+
+function makeComment(comments: NewsComment[]): string {
+  return comments
+    .map((comment) => {
+      const padding = comment.level * 40;
+      const childComments =
+        comment.comments.length > 0 ? makeComment(comment.comments) : "";
+
+      return `
+        <div style="padding-left: ${padding}px;" class="mt-4">
+          <div class="text-gray-400">
+            <i class="fa fa-sort-up mr-2"></i>
+            <strong>${comment.user}</strong> ${comment.time_ago}
+          </div>
+          <p class="text-gray-700">${comment.content}</p>
+        </div>
+        ${childComments}
+      `;
+    })
+    .join("");
 }
 
 function makeFeeds(apiFeeds: ApiNewsFeed[]): NewsFeed[] {
@@ -165,6 +178,7 @@ function makeFeeds(apiFeeds: ApiNewsFeed[]): NewsFeed[] {
     points: feed.points,
     time_ago: feed.time_ago,
     comments_count: feed.comments_count,
+    content: feed.content,
     url: feed.url ?? "",
     read: false,
   }));
@@ -196,7 +210,7 @@ function createNewsItem(newsFeed: NewsFeed): string {
     `;
 }
 
-function getHeaderTemplate() {
+function getHeaderTemplate(): string {
   return `
     <div class="bg-white text-xl">
       <div class="mx-auto px-4">
@@ -234,7 +248,7 @@ async function newsFeeds(): Promise<void> {
   `;
 
   if (newsFeed.length === 0) {
-    const data = await getData(NEWS_URL);
+    const data = await getData<NewsFeed[]>(NEWS_URL);
     newsFeed = store.feeds = makeFeeds(data);
   }
 
@@ -248,12 +262,12 @@ async function newsFeeds(): Promise<void> {
   template = template.replace("{{__news_feed__}}", newsList.join(""));
   template = template.replace(
     "{{__prev_page__}}",
-    store.currentPage > 1 ? store.currentPage - 1 : 1
+    String(store.currentPage > 1 ? store.currentPage - 1 : 1)
   );
   const totalPages = Math.ceil(newsFeed.length / pageSize);
   template = template.replace(
     "{{__next_page__}}",
-    store.currentPage < totalPages ? store.currentPage + 1 : totalPages
+    String(store.currentPage < totalPages ? store.currentPage + 1 : totalPages)
   );
 
   updateView(template);
@@ -270,19 +284,19 @@ async function newsFeeds(): Promise<void> {
  * // If location.hash is "#/page/2", it will call the `newsFeeds` function with page 2.
  * router();
  */
-export const router = () => {
+export const router = async (): Promise<void> => {
   const { type, id } = getHashParts();
 
   switch (type) {
     case undefined:
-      return newsFeeds();
+      return await newsFeeds();
     case "page":
       const page = Number(id);
       if (!page || page < 1 || page > pageSize || isNaN(page)) return;
       store.currentPage = page;
-      return newsFeeds();
+      return await newsFeeds();
     case "show":
-      return newsDetail();
+      return await newsDetail();
     default:
       updateView(`<h2>Page not found</h2>`);
   }
