@@ -2,6 +2,7 @@ import { NewsFeedApi } from '../core/api'
 import { NEWS_URL } from '../config'
 import { updateView, makeFeeds, getHeaderTemplate, createNewsItem } from '../core/view'
 import { NewsFeed } from '../types'
+import Store from '../store'
 
 /**
  * Displays the list of news feeds, supporting pagination.
@@ -14,8 +15,8 @@ import { NewsFeed } from '../types'
  *
  * To do: refactor -> class newsFeeds{}
  */
-export default async function newsFeeds(): Promise<void> {
-  let newsFeed: NewsFeed[] = window.store.feeds;
+export default async function newsFeeds(store: Store): Promise<void> {
+  // let newsFeed: NewsFeed[] = store.getAllFeeds();
   const newsList: string[] = [];
   let template = `
      <div class="bg-gray-600 min-h-screen">
@@ -26,28 +27,28 @@ export default async function newsFeeds(): Promise<void> {
     </div>
   `;
 
-  if (newsFeed.length === 0) {
+  if (!store.hasFeeds) {
     let api = new NewsFeedApi();
     const data = await api.getData(NEWS_URL);
-    newsFeed = window.store.feeds = makeFeeds(data);
+    store.setFeeds(data);
   }
 
   for (
-    let i = (window.store.currentPage - 1) * window.store.pageSize;
-    i < window.store.currentPage * window.store.pageSize && i < newsFeed.length;
+    let i = (store.currentPage - 1) * store.pageSize;
+    i < store.currentPage * store.pageSize && i < store.numberOfFeeds;
     i++
   ) {
-    newsList.push(createNewsItem(newsFeed[i]));
+    newsList.push(createNewsItem(store.getFeedByIndex(i)));
   }
   template = template.replace("{{__news_feed__}}", newsList.join(""));
   template = template.replace(
     "{{__prev_page__}}",
-    String(window.store.currentPage > 1 ? window.store.currentPage - 1 : 1)
+    String(store.prevPage)
   );
-  const totalPages = Math.ceil(newsFeed.length / window.store.pageSize);
+  const totalPages = Math.ceil(store.numberOfFeeds / store.pageSize);
   template = template.replace(
     "{{__next_page__}}",
-    String(window.store.currentPage < totalPages ? window.store.currentPage + 1 : totalPages)
+    String(store.nextPage)
   );
 
   updateView(template);

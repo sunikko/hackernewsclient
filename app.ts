@@ -1,21 +1,9 @@
 
 import router from './src/core/router'
-import {Store} from './src/types'
+import Store from './src/store'
 
-const store: Store = {
-  currentPage: 1,
-  feeds: [],
-  pageSize: 5
-};
 
-// [to do] : not use global variable
-declare global {
-  interface Window {
-    store: Store;
-  }
-}
-window.store = store;
+const store = new Store();
 
-window.addEventListener("hashchange", router);  
-router();
-  
+router(store);
+window.addEventListener("hashchange", () => router(store));  

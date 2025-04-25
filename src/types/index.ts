@@ -1,7 +1,13 @@
-export interface Store {
+export interface NewsStore{
+    getAllFeeds: () => NewsFeed[];
+    getFeedByIndex: (id: number) => NewsFeed;
+    setFeeds: (feeds: NewsFeed[]) => void;
+    makeRead: (id: number) => void;
+    hasFeeds: boolean;
     currentPage: number;
-    feeds: NewsFeed[];
-    pageSize: number;
+    numberOfFeeds: number;
+    nextPage: number;
+    prevPage: number;
 }
   
 export interface News {

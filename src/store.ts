@@ -1,6 +1,6 @@
-import { NewsFeed } from './types'
+import { NewsFeed, NewsStore } from './types'
 
-class Store {
+class Store implements NewsStore {
     private _currentPage: number;
     private feeds: NewsFeed[];
     private _pageSize: number;
@@ -23,7 +23,8 @@ class Store {
     }
 
     get nextPage(): number {
-        return this._currentPage + 1;
+        const totalPages = Math.ceil(this.numberOfFeeds / this._pageSize);
+        return this._currentPage < totalPages ? this._currentPage + 1 : totalPages;
     }
 
     get prevPage(): number {
@@ -61,7 +62,7 @@ class Store {
     removeFeed(feedId: number): void {
         this.feeds = this.feeds.filter(feed => feed.id !== feedId);
     }
-    getFeedByIndex(index: number): NewsFeed | undefined {
+    getFeedByIndex(index: number): NewsFeed {
         if (index < 0 || index >= this.feeds.length) {
             throw new Error("Index out of bounds");
         }
@@ -70,7 +71,7 @@ class Store {
     setFeeds(feeds: NewsFeed[]): void {
         this.feeds = feeds.map(feed => ({ ...feed, read: false }));
     }
-    makeFeed(id: number): void{
+    makeRead(id: number): void{
         const feed = this.feeds.find(feed => feed.id === id);
         if (feed) {
             feed.read = true;
@@ -80,5 +81,5 @@ class Store {
     }
 }
 const store = new Store();
-export default store;
+export default Store;
 

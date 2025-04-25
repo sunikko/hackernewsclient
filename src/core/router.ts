@@ -1,5 +1,6 @@
 import { newsDetail, newsFeeds} from '../page'
 import { getHashParts, updateView} from '../core/view'
+import Store from '../store'
 
 /**
  * Routes the application based on the current URL hash.
@@ -12,19 +13,19 @@ import { getHashParts, updateView} from '../core/view'
  * // If location.hash is "#/page/2", it will call the `newsFeeds` function with page 2.
  * router();
  */
-export default async function router(): Promise<void> {
+export default async function router(store: Store): Promise<void> {
     const { type, id } = getHashParts();
   
     switch (type) {
       case undefined:
-        return await newsFeeds();
+        return await newsFeeds(store);
       case "page":
         const page = Number(id);
-        if (!page || page < 1 || page > window.store.pageSize || isNaN(page)) return;
-        window.store.currentPage = page;
-        return await newsFeeds();
+        if (!page || page < 1 || page > store.pageSize || isNaN(page)) return;
+        store.currentPage = page;
+        return await newsFeeds(store);
       case "show":
-        return await newsDetail();
+        return await newsDetail(store);
       default:
         updateView(`<h2>Page not found</h2>`);
     }

@@ -1,7 +1,7 @@
 import { NewsDetailApi} from '../core/api'
 import { getHashParts, updateView, makeComment} from '../core/view'
 import { CONTENT_URL } from '../config'
-
+import Store from '../store'
 /**
  * Displays the details of a news item based on its ID.
  *
@@ -12,7 +12,7 @@ import { CONTENT_URL } from '../config'
  *
  * To do: refactor -> class newsDetail{}
  */
-export default async function newsDetail(): Promise<void> {
+export default async function newsDetail(store: Store): Promise<void> {
     const { id } = getHashParts();
     if (!id) {
       return;
@@ -32,7 +32,7 @@ export default async function newsDetail(): Promise<void> {
                 <h1 class="font-extrabold">Hacker News</h1>
               </div>
               <div class="items-center justify-end">
-                <a href="#/page/${window.store.currentPage}" class="text-gray-500">
+                <a href="#/page/${store.currentPage}" class="text-gray-500">
                   <i class="fa fa-times"></i>
                 </a>
               </div>
@@ -55,12 +55,7 @@ export default async function newsDetail(): Promise<void> {
       </div>
     `;
   
-    for (let i = 0; i < window.store.feeds.length; i++) {
-      if (window.store.feeds[i].id === Number(id)) {
-        window.store.feeds[i].read = true;
-        break;
-      }
-    }
+    store.makeRead(Number(id));
   
     updateView(
       template.replace("{{__comments__}}", makeComment(newsContent.comments))
